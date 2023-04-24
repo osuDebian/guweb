@@ -6,6 +6,9 @@ import bcrypt
 import hashlib
 import os
 import time
+import string
+import random
+import requests
 
 from cmyui.logging import Ansi
 from cmyui.logging import log
@@ -128,6 +131,48 @@ async def settings_profile_post():
     session.pop('authenticated', None)
     session.pop('user_data', None)
     return await flash('success', 'Your username/email have been changed! Please login again.', 'login')
+
+
+@frontend.route('/settings/accesskey')
+@login_required
+async def settings_accesskey():
+    keys_db = await glob.db.fetchall('SELECT accesskey FROM access_keys WHERE userid = %s and is_used = 0', [session['user_data']['id']])
+    keys = []
+    for k in keys_db:
+        keys.append(k['accesskey'])
+        
+    return await render_template('settings/accesskey.html', keys=keys)
+
+@frontend.route('/settings/accesskey', methods=['POST'])
+@login_required
+async def settings_accesskey_post():
+    latest_generated_time = await glob.db.fetch('SELECT latest_generate_key FROM users WHERE id = %s', [session['user_data']['id']])
+    next_can_generated_time = latest_generated_time['latest_generate_key'] + 604800
+
+    if int(time.time() - next_can_generated_time) < 0 and not session['user_data']['is_staff']:
+        return await flash_with_customizations('error', 'You are not able to generate a new key yet.', 'settings/accesskey')
+    
+    string_pool = string.ascii_letters + string.digits
+    new_access_key = ""
+    for i in range(24):
+        new_access_key += random.choice(string_pool)
+
+    # update latest generated key time
+    await glob.db.execute(
+        'UPDATE users '
+        'SET latest_generate_key = UNIX_TIMESTAMP() '
+        'WHERE id = %s',
+        [session['user_data']['id']]
+    )
+
+    # insert new access key
+    await glob.db.execute(
+        'INSERT INTO access_keys '
+        'VALUES (%s, %s, UNIX_TIMESTAMP(), 0, "") ',
+        [new_access_key, session['user_data']['id']]
+    )
+
+    return await flash_with_customizations('success', 'An Access Key has been generated!', 'settings/accesskey')
 
 @frontend.route('/settings/avatar')
 @login_required
@@ -334,6 +379,78 @@ async def profile_select(id):
     return await render_template('profile.html', user=user_data, mode=mode, mods=mods)
 
 
+@frontend.route('/test/<id>')
+async def testrouter(id='0'):
+    return f"id: {id}"
+
+# TODO: beatmap page create
+@frontend.route('/b/<bid>')
+@frontend.route('/s/<sid>')
+@frontend.route('/beatmaps/<bid>')
+# @frontend.route('/beatmapsets/<int:sid>')
+@frontend.route('/beatmapsets/<sid>')
+# @frontend.route('/beatmapsets/<int:sid>/<int:bid>/<str:mods>')
+async def beatmap(bid=0, sid=0):
+    MAP = None
+
+    if not sid == 0 and not bid == 0:
+        MAP = await glob.db.fetch(
+            'SELECT id, set_id, md5 '
+            'FROM maps '
+            'WHERE set_id = %s and id = %s LIMIT 1',
+            [sid, bid]
+        )
+    elif not sid == 0:
+        MAP = await glob.db.fetch(
+            'SELECT id, set_id, md5 '
+            'FROM maps '
+            'WHERE set_id = %s LIMIT 1',
+            [sid]
+        )
+    elif not bid == 0:
+        MAP = await glob.db.fetch(
+            'SELECT id, set_id, md5 '
+            'FROM maps '
+            'WHERE id = %s LIMIT 1',
+            [bid]
+        )
+
+    #no beatmap in db
+    if not MAP:
+        if not sid == 0:
+            req = requests.get(f"https://api.nerinyan.moe/search?q={sid}&option=s&nsfw=1&s=all").json()[0]
+        elif not bid == 0:
+            req = requests.get(f"https://api.nerinyan.moe/search?q={bid}&option=b&nsfw=1&s=all").json()[0]
+
+        if len(req) < 1:
+            return (await render_template('404.html'), 404)
+        
+        requests.get(f"https://api.debian.moe/v1/get_map_info?id={req['beatmaps'][0]['id']}")
+        if not sid == 0 and not bid == 0:
+            MAP = await glob.db.fetch(
+                'SELECT id, set_id, md5 '
+                'FROM maps '
+                'WHERE set_id = %s and id = %s LIMIT 1',
+                [sid, bid]
+            )
+        elif not sid == 0:
+            MAP = await glob.db.fetch(
+                'SELECT id, set_id, md5 '
+                'FROM maps '
+                'WHERE set_id = %s LIMIT 1',
+                [sid]
+            )
+        elif not bid == 0:
+            MAP = await glob.db.fetch(
+                'SELECT id, set_id, md5 '
+                'FROM maps '
+                'WHERE id = %s LIMIT 1',
+                [bid]
+            )
+
+    return await render_template('beatmaps.html', bid=MAP['id'], sid=MAP['set_id'])
+
+
 @frontend.route('/leaderboard')
 @frontend.route('/lb')
 @frontend.route('/leaderboard/<mode>/<sort>/<mods>')
@@ -455,9 +572,8 @@ async def register_post():
     username = form.get('username', type=str)
     email = form.get('email', type=str)
     passwd_txt = form.get('password', type=str)
-
-    if username is None or email is None or passwd_txt is None:
-        return await flash('error', 'Invalid parameters.', 'home')
+    repeat_passwd_txt = form.get('repeat_password', type=str)
+    access_key = form.get('accesskey', type=str)
 
     if glob.config.hCaptcha_sitekey != 'changeme':
         captcha_data = form.get('h-captcha-response', type=str)
@@ -466,6 +582,9 @@ async def register_post():
             not await utils.validate_captcha(captcha_data)
         ):
             return await flash('error', 'Captcha failed.', 'register')
+
+    if username is None or email is None or passwd_txt is None or repeat_passwd_txt is None or access_key is None:
+        return await flash('error', 'Invalid parameters.', 'home')
 
     # Usernames must:
     # - be within 2-15 characters in length
@@ -495,9 +614,13 @@ async def register_post():
         return await flash('error', 'Email already taken by another user.', 'register')
 
     # Passwords must:
+    # - matched repeat pwssowrd
     # - be within 8-32 characters in length
     # - have more than 3 unique characters
     # - not be in the config's `disallowed_passwords` list
+    if not passwd_txt == repeat_passwd_txt:
+        return await flash('error', 'Password are not matched.', 'register')
+
     if not 8 <= len(passwd_txt) <= 32:
         return await flash('error', 'Password must be 8-32 characters in length.', 'register')
 
@@ -506,6 +629,11 @@ async def register_post():
 
     if passwd_txt.lower() in glob.config.disallowed_passwords:
         return await flash('error', 'That password was deemed too simple.', 'register')
+    
+    key_validation = await glob.db.fetch('SELECT is_used FROM access_keys WHERE accesskey = %s', [access_key])
+    print(f"{key_validation} - {access_key}")
+    if  key_validation['is_used'] == None or bool(key_validation['is_used']):
+        return await flash('error', 'Access key already used or Acces key is invalid.', 'register')
 
     # TODO: add correct locking
     # (start of lock)
@@ -515,12 +643,20 @@ async def register_post():
 
     safe_name = utils.get_safe_name(username)
 
+    # Access key is_used change
+    await glob.db.execute(
+        'UPDATE access_keys '
+        'SET is_used = 1, who_used = %s'
+        'WHERE accesskey = %s',
+        [username, access_key]
+    )
+
     # fetch the users' country
     if (
         request.headers and
-        (ip := request.headers.get('X-Real-IP', type=str)) is not None
+        (country := request.headers.get('CF-IPCountry', type=str).lower()) is not None
     ):
-        country = await utils.fetch_geoloc(ip)
+        pass
     else:
         country = 'xx'
 

@@ -1,8 +1,9 @@
 /* gulag mascot/avatar */
 
 .gulag-avatar {
-  background-image: url("/static/images/pippi.png");
+  background-image: url("/static/images/bocchi.png");
   background-repeat: no-repeat;
+  background-size: cover;
   /*     available avatar widths & heights      */
   /* gulag.png:   width: 512px; height: 363px;  */
   /* pippi.png:   width: 372px; height: 432px;  */

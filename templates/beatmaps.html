@@ -1,59 +1,46 @@
 {% extends 'base.html' %}
-{% block title %} Leaderboard {% endblock %}
+{% block title %} Beatmap Info {% endblock %}
 
 {% block header %}
 <script src="/static/js/asserts/vue.js"></script>
 <script src="/static/js/asserts/vue-axios.js"></script>
 
 <script>
-    var mode = "{{ mode }}";
-    var mods = "{{ mods }}";
-    var sort = "{{ sort }}";
+    var mode = 'std';
+    var mods = 'vn';
+    var sort = 'pp';
+    var bid = "{{ bid }}";
+    var sid = "{{ sid }}";
     var domain = "{{ domain() }}";
 </script>
 
-<link rel="stylesheet" href="/static/css/pages/leaderboard.css">
+<link rel="stylesheet" href="/static/css/pages/beatmap.css">
 {% endblock %}
 
 {% block content %}
 <div id="app" :class="(load ? 'load' : '')">
-    <div class="leaderboard-banner main-banner">
+    <div class="beatmap-banner main-banner">
         <div class="main-selector">
             <a class="mode-select" v-bind:class="{ 'active': mode === 'std' }"
-            @click="LoadLeaderboard(sort, 'std', mods)">
+            @click="LoadBeatmap(sort, 'std', mods)">
                 <i class="mode-icon mode-osu"></i><span class="modetext"> osu!</span>
             </a>
             <a class="mode-select" v-bind:class="{ 'active': mode === 'taiko', 'disabled': mods === 'ap' }"
-            @click="LoadLeaderboard(sort, 'taiko', mods)">
+            @click="LoadBeatmap(sort, 'taiko', mods)">  
                 <i class="mode-icon mode-taiko"></i><span class="modetext"> osu!taiko</span>
             </a>
             <a class="mode-select" v-bind:class="{ 'active': mode === 'catch', 'disabled': mods === 'ap' }"
-            @click="LoadLeaderboard(sort, 'catch', mods)">
+            @click="LoadBeatmap(sort, 'catch', mods)">
                 <i class="mode-icon mode-catch"></i><span class="modetext"> osu!catch</span>
             </a>
             <a class="mode-select" v-bind:class="{ 'active': mode === 'mania', 'disabled': mods === 'ap' || mods === 'rx' }"
-            @click="LoadLeaderboard(sort, 'mania', mods)">
+            @click="LoadBeatmap(sort, 'mania', mods)">
                 <i class="mode-icon mode-mania"></i><span class="modetext"> osu!mania</span>
             </a>
         </div>
-        <div class="banner-text">Leaderboard</div>
-        <div class="selector">
-            <div class="left">
-                <a class="simple-banner-switch" v-bind:class="{ 'active': sort === 'pp' }"
-                @click="LoadLeaderboard('pp', mode, mods, '')">PP</a>
-                <a class="simple-banner-switch" v-bind:class="{ 'active': sort === 'rscore' }"
-                @click="LoadLeaderboard('rscore', mode, mods, '')">Score</a>
-            </div>
-            <div class="right">
-                <a class="simple-banner-switch" v-bind:class=" { 'active': mods === 'vn' }"
-                @click="LoadLeaderboard(sort, mode, 'vn')">Vanilla</a>
-                <a class="simple-banner-switch" v-bind:class=" { 'active': mods === 'rx', 'disabled': mode === 'mania' }"
-                @click="LoadLeaderboard(sort, mode, 'rx')">Relax</a>
-                <a class="simple-banner-switch" v-bind:class=" { 'active': mods === 'ap', 'disabled': mode === 'taiko' || mode === 'catch' || mode === 'mania'  }"
-                @click="LoadLeaderboard(sort, mode, 'ap')">Autopilot</a>
-            </div>
-        </div>
+        <div class="banner-bg" :style="'background-image: url(https://assets.ppy.sh/beatmaps/'+sid+'/covers/cover@2x.jpg)'"></div>
     </div>
+
     <div class="main-block">
         <div class="leaderboard-main-bg table-responsive">
             <div v-if="boards.length != undefined && boards.length != 0">
@@ -67,7 +54,6 @@
                                     <% (sort=='rscore' ? "Score" : "" ) %>
                             </th>
                             <th class="t-heading"> Accuracy </th>
-                            <th class="t-heading"> Playcount </th>
                             <th class="t-heading"> Max Combo </th>
                         </tr>
                     </thead>
@@ -83,22 +69,19 @@
                                         <% flags[user.country.toUpperCase()] %>
                                     </div>
                                 </a>
-                                <a :style="'background-image: url(https://a.debian.moe/' + user.player_id + ')'"
+                                <a :style="'background-image: url(https://a.debian.moe/' + user.userid + ')'"
                                     class="player-mini-image"
                                 ></a>
-                                <a :href="'/u/'+user.player_id+'?mode='+mode+'&mods='+mods">
+                                <a :href="'/u/'+user.userid+'?mode='+mode+'&mods='+mods">
                                     <% user.name %>
                                 </a>
                             </td>
                             <td v-if="sort == 'pp' || sort == 'rscore'">
                                 <% (sort=='pp' ? user.pp+'pp' : "" ) %>
-                                    <% (sort=='rscore' ? scoreFormat(user.rscore) : "" ) %>
+                                    <% (sort=='score' ? scoreFormat(user.score) : "" ) %>
                             </td>
                             <td>
                                 <% user.acc.toFixed(2) %>%
-                            </td>
-                            <td>
-                                <% addCommas(user.plays) %>
                             </td>
                             <td>
                                 <% addCommas(user.max_combo) %>
@@ -117,5 +100,5 @@
 </div>
 
 <script src="/static/js/asserts/vue-flags.js"></script>
-<script src="/static/js/pages/leaderboard.js"></script>
+<script src="/static/js/pages/beatmaps.js"></script>
 {% endblock %}

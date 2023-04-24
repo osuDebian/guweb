@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %} Profile {% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="/static/css/pages/settings/style.css">
+<link rel="stylesheet" href="/static/css/pages/settings/accesskeys/style.css">
+
+{% if flash %}
+<div class='noti-banner noti-banner-warning'>
+  <div class="container">
+    <div class="noti-column">
+      <div class='noti-col noti-col-icon'></div>
+      <div class='noti-col noti-col-label'>
+        <div class='noti-bannertype'>
+          {% if status=='error' %}
+          Warning
+          {% elif status=='success' %}
+          Notice
+          {% endif %}
+        </div>
+        <div class='noti-bannertext'>
+          {% if status=='error' %}
+          Uh oh! Be careful!
+          {% elif status=='success' %}
+          Hey! Listen!
+          {% endif %}
+        </div>
+      </div>
+      <div class='noti-banner-text'>
+        {{ flash }}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="main-block">
+  {% include "settings/sidebar.html" %}
+  <div class="block-content right">
+    <div id="general" class="single-right-block">
+      <div class="right-block-header">
+        Access Key
+      </div>
+      <form action="/settings/accesskey" method="post" class="setting-block-content">
+        <div class="single-block-content">
+          <div class="block-content--left">
+            <div class="field-label is-normal">
+              <label class="label accesskey">Available keys ({{ keys|length }})</label>
+              <div class="subtitle">Share the Access Key with your friend and invite them to the server!</div>
+            </div>
+          </div>
+          <div class="block-content--right">
+            <div class="field-body">
+              <div class="field">
+                {% if keys %}
+                {% for ak in keys %}
+                <p class="control accesskey">
+                    <input class="input" type="text" name="username"
+                    value="{{ ak }}" readonly>
+                </p> 
+                {% endfor %}
+                
+                {% else %}
+                <p class="control">
+                <input class="input" type="text" name="username"
+                value="You don't have a key." readonly>
+                </p> 
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class='button is-primary' type='submit'><span class='icon is-small'><i class="fa-solid fa-key"></i></span><span>Generate a new key</span></button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
