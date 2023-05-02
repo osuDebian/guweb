@@ -27,7 +27,7 @@ from objects import glob
 from objects import utils
 from objects.privileges import Privileges
 from objects.utils import flash
-from objects.utils import flash_with_customizations
+from objects.utils import flash_with_customizations, flash_with_customizations_for_accesskey
 
 VALID_MODES = frozenset({'std', 'taiko', 'catch', 'mania'})
 VALID_MODS = frozenset({'vn', 'rx', 'ap'})
@@ -172,7 +172,7 @@ async def settings_accesskey_post():
         [new_access_key, session['user_data']['id']]
     )
 
-    return await flash_with_customizations('success', 'An Access Key has been generated!', 'settings/accesskey')
+    return await flash_with_customizations_for_accesskey('success', 'An Access Key has been generated!', 'settings/accesskey')
 
 @frontend.route('/settings/avatar')
 @login_required

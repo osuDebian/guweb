@@ -2,6 +2,7 @@
 {% block title %} Beatmap Info {% endblock %}
 
 {% block header %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/4.0.2/timeago.min.js"></script>
 <script src="/static/js/asserts/vue.js"></script>
 <script src="/static/js/asserts/vue-axios.js"></script>
 
@@ -47,19 +48,44 @@
                 <table class="leaderboard-table table-responsive">
                     <thead>
                         <tr>
-                            <th class="t-heading"> </th>
-                            <th class="t-heading t-heading--main"></th>
+                            <th class="t-heading"> Rank </th>
+                            <th class="t-heading t-heading--score"> </th>
                             <th v-if="sort == 'pp' || sort == 'rscore'" class="t-heading table--selected">
                                 <% (sort=='pp' ? "PP" : "" ) %>
                                     <% (sort=='rscore' ? "Score" : "" ) %>
                             </th>
                             <th class="t-heading"> Accuracy </th>
-                            <th class="t-heading"> Max Combo </th>
+                            <th class="t-heading t-heading--main"> Player </th>
+                            <th class="t-heading"> Max Combo (<% mapinfo.max_combo %>) </th>
+                            <th class="t-heading"> 300 </th>
+                            <th class="t-heading"> 100 </th>
+                            <th class="t-heading"> 50 </th>
+                            <th class="t-heading"> Miss </th>
+                            <th v-if="sort == 'pp' || sort == 'rscore'" class="t-heading">
+                                <% (sort=='pp' ? "Score" : "" ) %>
+                                    <% (sort=='rscore' ? "PP" : "" ) %>
+                            </th>
+                            <th class="t-heading t-heading--time"> Time </th>
+                            <th class="t-heading t-heading--mods"> Mods </th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-for="(user, index) in boards" class="leaderboard-column">
                             <td class="column-player-rank">#<% index + 1 %>
+                            </td>
+                            <td class="column-player-score-rank">
+                                <div class="rank-single">
+                                    <div v-bind:class="'map-rank rank-'+user.grade">
+                                        <% user.grade.replace("X", "SS" ).replace("H", "" ) %>
+                                    </div>
+                                </div>
+                            </td>
+                            <td v-if="sort == 'pp' || sort == 'rscore'">
+                                <% (sort=='pp' ? user.pp.toFixed()+'pp' : "" ) %>
+                                    <% (sort=='score' ? scoreFormat(user.score) : "" ) %>
+                            </td>
+                            <td>
+                                <% user.acc.toFixed(2) %>%
                             </td>
                             <td class="column-player-name text-left">
                                 <a :title="flags[user.country.toUpperCase()]"
@@ -73,18 +99,33 @@
                                     class="player-mini-image"
                                 ></a>
                                 <a :href="'/u/'+user.userid+'?mode='+mode+'&mods='+mods">
-                                    <% user.name %>
+                                    <% user.player_name %>
                                 </a>
                             </td>
+                            <td>
+                                <% addCommas(user.max_combo) %>x
+                            </td>
+                            <td>
+                                <% addCommas(user.n300) %>
+                            </td>
+                            <td>
+                                <% addCommas(user.n100) %>
+                            </td>
+                            <td>
+                                <% addCommas(user.n50) %>
+                            </td>
+                            <td>
+                                <% addCommas(user.nmiss) %>
+                            </td>
                             <td v-if="sort == 'pp' || sort == 'rscore'">
-                                <% (sort=='pp' ? user.pp+'pp' : "" ) %>
-                                    <% (sort=='score' ? scoreFormat(user.score) : "" ) %>
+                                <% (sort=='pp' ? scoreFormat(user.score) : "" ) %>
+                                    <% (sort=='score' ? user.pp+'pp' : "" ) %>
                             </td>
                             <td>
-                                <% user.acc.toFixed(2) %>%
+                                <% timeago.format(user.play_time) %>
                             </td>
                             <td>
-                                <% addCommas(user.max_combo) %>
+                                <% getScoreMods(user.mods) %>
                             </td>
                         </tr>
                     </tbody>
@@ -100,5 +141,5 @@
 </div>
 
 <script src="/static/js/asserts/vue-flags.js"></script>
-<script src="/static/js/pages/beatmaps.js"></script>
+<script src="/static/js/pages/beatmaps.js?123125415"></script>
 {% endblock %}

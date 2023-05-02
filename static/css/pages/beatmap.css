@@ -233,3 +233,111 @@ a:hover {
     position: absolute;
     background-image: linear-gradient(180deg,rgba(0, 0, 0, 0.24),rgba(0, 0, 0, 0.62));
 }
+
+.leaderboard-main-bg {
+  border-bottom-right-radius: 8px;
+  border-bottom-left-radius: 8px;
+  padding: 24px 24px;
+  overflow-x: auto;
+}
+
+.leaderboard-table {
+  width: 100%;
+  white-space: nowrap;
+  text-align: center;
+  border-spacing: 0 3px;
+  border-collapse: separate;
+  padding-bottom: 24px;
+  transition: 0.2s ease;
+}
+
+.leaderboard-column {
+  background-color: #eee;
+  color: #222;
+  height: 38px;
+  font-size: 12px;
+  background-color: hsl(var(--main), 15%, 25%);
+}
+
+tr td {
+  padding: 6px 0;
+}
+
+.column-player-rank {
+  padding: 0 10px;
+  text-align: center;
+  background-color: hsl(var(--main), 15%, 27%) !important;
+  min-width: 44px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #fff;
+}
+
+.column-player-score-rank {
+  font-size: 20px;
+  vertical-align: middle;
+}
+
+.column-player-name {
+  padding: 10px 10px;
+  font-weight: 600;
+  text-align: left;
+  font-size: 13px;
+}
+
+.column-player-name a {
+  color: #fff !important;
+}
+
+.t-heading {
+  font-weight: 400;
+  color: #fff;
+  opacity: 0.7;
+  padding: 5px 12px;
+  text-align: center !important;
+  font-size: 12px;
+}
+
+.t-heading--score {
+  padding: 5px 20px;
+}
+
+.t-heading--main {
+  width: 100%;
+  text-align: left !important;
+}
+
+.t-heading--time {
+  padding: 5px 32px;
+}
+
+.t-heading--mods {
+  padding: 5px 20px;
+}
+
+.t-column:first-child {
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+}
+
+.t-column:last-child {
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+tr.leaderboard-column td {
+  font-weight: 600;
+  border-bottom: hsl(var(--main), 20%, 30%);
+  transition: 0.1s background-color;
+  color: #fff !important;
+  text-align: center;
+}
+
+table td,
+table th {
+  vertical-align: baseline;
+}
+
+.leaderboard-column:hover td:not(:first-child) {
+  background-color: hsl(var(--main), 20%, 30%);
+}

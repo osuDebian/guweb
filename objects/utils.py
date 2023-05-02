@@ -29,6 +29,23 @@ async def flash_with_customizations(status: str, msg: str, template: str) -> str
         customizations=profile_customizations
     )
 
+async def flash_with_customizations_for_accesskey(status: str, msg: str, template: str) -> str:
+    """Flashes a success/error message on a specified template. (for customisation settings)"""
+
+    keys_db = await glob.db.fetchall('SELECT accesskey FROM access_keys WHERE userid = %s and is_used = 0', [session['user_data']['id']])
+    keys = []
+    for k in keys_db:
+        keys.append(k['accesskey'])
+
+    profile_customizations = utils.has_profile_customizations(session['user_data']['id'])
+    return await render_template(
+        template_name_or_list=f'{template}.html',
+        flash=msg,
+        status=status,
+        customizations=profile_customizations,
+        keys=keys
+    )
+
 def get_safe_name(name: str) -> str:
     """Returns the safe version of a username."""
     # Safe name should meet few criterias.
